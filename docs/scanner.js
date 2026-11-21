@@ -44,11 +44,8 @@
       background:linear-gradient(180deg,#1c2330 0%,#11161e 100%);color:#e7ecf2;border:1px solid rgba(231,236,242,.08);border-radius:14px;
       box-shadow:0 24px 60px rgba(0,0,0,.5),0 8px 20px rgba(0,0,0,.3);font:14px/1.5 Inter,system-ui,sans-serif;padding:14px;letter-spacing:-.005em}
     #${ID} *{box-sizing:border-box}
-    #${ID}.wide{left:12px;right:12px;width:auto;max-height:calc(100vh - 24px)}
-    #${ID}.wide video{max-height:60vh;object-fit:contain}
     @media (max-width:600px){
-      #${ID}{left:0;right:0;bottom:0;width:auto;border-radius:14px 14px 0 0;max-height:85vh}
-      #${ID}.wide{left:0;right:0;max-height:100vh}
+      #${ID}{left:0;right:0;bottom:0;width:auto;border-radius:14px 14px 0 0;max-height:calc(100vh - 12px);max-height:calc(100dvh - 12px)}
     }
     #${ID} h3{margin:0 0 10px;font:400 19px/1.1 Fraunces,Georgia,serif;letter-spacing:-.02em;display:flex;justify-content:space-between;align-items:center;color:#e7ecf2}
     #${ID} button{font:600 13px Inter,system-ui,sans-serif;border:0;border-radius:999px;padding:8px 14px;cursor:pointer;background:#7cf5d4;color:#0a0d12;
@@ -90,9 +87,8 @@
 
   const box = document.createElement('div');
   box.id = ID;
-  try { if (localStorage.getItem('kodSkenerWide')) box.classList.add('wide'); } catch {}
   box.innerHTML = `
-    <h3>📷 Kod skener <span><button class="sec" data-a="wide" title="Raširi / skupi">⤢</button> <button class="sec" data-a="reload" title="Osveži album">↻</button> <button class="sec" data-a="settings" title="Podešavanja">⚙️</button> <button class="sec" data-a="close">✕</button></span></h3>
+    <h3>📷 Kod skener <span><button class="sec" data-a="reload" title="Osveži album">↻</button> <button class="sec" data-a="settings" title="Podešavanja">⚙️</button> <button class="sec" data-a="close">✕</button></span></h3>
     <div class="settings" hidden>
       <div class="msg">Tvoj Anthropic API ključ (console.anthropic.com). Čuva se samo u ovom browseru.</div>
       <input type="password" class="key" placeholder="sk-ant-..." autocomplete="off">
@@ -433,10 +429,6 @@ Report every code you find with the report_codes tool. If there is no readable c
   box.addEventListener('click', e => {
     const a = e.target.closest('button')?.dataset.a;
     if (a === 'settings') showSettings($('.settings').hidden);
-    if (a === 'wide') {
-      box.classList.toggle('wide');
-      try { localStorage.setItem('kodSkenerWide', box.classList.contains('wide') ? '1' : ''); } catch {}
-    }
     if (a === 'savekey') {
       const k = $('.key').value.trim();
       try { localStorage.setItem(KEY_KEY, k); localStorage.setItem(MODEL_KEY, $('.model').value); } catch {}
