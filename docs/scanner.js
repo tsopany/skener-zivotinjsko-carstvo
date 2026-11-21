@@ -67,6 +67,10 @@
     #${ID} .msg{font-size:12.5px;color:#8a95a6;margin:6px 0}
     #${ID} .log{color:#7cf5d4}
     #${ID} .bar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+    #${ID} .ptabs{display:flex;gap:4px;padding:4px;margin:0 0 8px;background:#0a0d12;border:1px solid rgba(231,236,242,.08);border-radius:999px}
+    #${ID} .ptabs .ptab{flex:1;background:transparent;color:#8a95a6;box-shadow:none;font-weight:500;padding:7px 10px}
+    #${ID} .ptabs .ptab[aria-selected="true"]{background:#7cf5d4;color:#0a0d12;font-weight:600}
+    #${ID} .list:not(:empty){margin:8px 0}
     #${ID} video{width:100%;border-radius:10px;background:#000;display:block}
     #${ID} .cam{position:relative}
     #${ID} .cam.busy::after{content:'Čitam…';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -88,7 +92,7 @@
   box.id = ID;
   try { if (localStorage.getItem('kodSkenerWide')) box.classList.add('wide'); } catch {}
   box.innerHTML = `
-    <h3>📷 Kod skener <span><button class="sec" data-a="wide" title="Raširi / skupi">⤢</button> <button class="sec" data-a="settings" title="Podešavanja">⚙️</button> <button class="sec" data-a="close">✕</button></span></h3>
+    <h3>📷 Kod skener <span><button class="sec" data-a="wide" title="Raširi / skupi">⤢</button> <button class="sec" data-a="reload" title="Osveži album">↻</button> <button class="sec" data-a="settings" title="Podešavanja">⚙️</button> <button class="sec" data-a="close">✕</button></span></h3>
     <div class="settings" hidden>
       <div class="msg">Tvoj Anthropic API ključ (console.anthropic.com). Čuva se samo u ovom browseru.</div>
       <input type="password" class="key" placeholder="sk-ant-..." autocomplete="off">
@@ -98,21 +102,28 @@
       </select>
       <div class="bar"><button data-a="savekey">Sačuvaj</button><button class="sec" data-a="forgetkey">Obriši ključ</button></div>
     </div>
-    <div class="bar">
-      <button data-a="photo">📁 Učitaj sliku</button>
-      <button data-a="cam">🎥 Kamera</button>
-      <button class="sec" data-a="reload">↻ Osveži album</button>
+    <div class="ptabs">
+      <button class="ptab" data-a="tab" data-tab="img" aria-selected="true">📷 Slika</button>
+      <button class="ptab" data-a="tab" data-tab="txt" aria-selected="false">⌨️ Tekst</button>
     </div>
-    <input type="file" accept="image/*" multiple hidden>
-    <div class="cam" hidden>
-      <video playsinline muted></video>
-      <div class="bar"><button data-a="snap">📸 Snimi</button><button class="sec" data-a="camoff">Zatvori kameru</button></div>
+    <div class="pane" data-pane="img">
+      <div class="bar">
+        <button data-a="photo">📁 Učitaj sliku</button>
+        <button data-a="cam">🎥 Kamera</button>
+      </div>
+      <input type="file" accept="image/*" multiple hidden>
+      <div class="cam" hidden>
+        <video playsinline muted></video>
+        <div class="bar"><button data-a="snap">📸 Snimi</button><button class="sec" data-a="camoff">Zatvori kameru</button></div>
+      </div>
+      <div class="msg">Učitaj sliku ili uključi kameru. 1–4 kartice po slici, izbliza i oštro.</div>
     </div>
-    <div class="msg">Učitaj sliku ili uključi kameru. 1–4 kartice po slici, izbliza i oštro.</div>
+    <div class="pane" data-pane="txt" hidden>
+      <textarea placeholder="Nalepi ili ukucaj kodove, jedan po redu"></textarea>
+      <div class="bar"><button data-a="add">+ Dodaj u listu</button></div>
+    </div>
     <div class="list"></div>
-    <textarea placeholder="…ili nalepi kodove ovde (jedan po redu)"></textarea>
     <div class="bar">
-      <button class="sec" data-a="add">+ Dodaj iz teksta</button>
       <button class="sec" data-a="clear">🧹 Očisti sve</button>
       <button data-a="send">Pošalji sve</button>
     </div>
@@ -200,12 +211,26 @@
     camBox.hidden = true;
   }
 
+  // Average brightness (0–255) of a small copy of the frame.
+  function brightness(canvas) {
+    const t = document.createElement('canvas');
+    t.width = 32; t.height = 18;
+    const g = t.getContext('2d');
+    g.drawImage(canvas, 0, 0, 32, 18);
+    const d = g.getImageData(0, 0, 32, 18).data;
+    let sum = 0;
+    for (let i = 0; i < d.length; i += 4) sum += (d[i] + d[i + 1] + d[i + 2]) / 3;
+    return sum / (d.length / 4);
+  }
+
   async function snap(btn) {
     if (!stream) return;
+    if (!video.videoWidth) { log('Kamera još nije spremna, sačekaj sekund pa probaj ponovo.'); return; }
     const c = document.createElement('canvas');
     c.width = video.videoWidth;
     c.height = video.videoHeight;
     c.getContext('2d').drawImage(video, 0, 0);
+    if (brightness(c) < 15) { log('Slika je skoro crna: kamera još nije spremna ili je pokrivena.'); return; }
     btn.disabled = true;
     video.pause();                       // freeze on the captured frame while it's being read
     camBox.classList.add('busy');
@@ -226,7 +251,18 @@
 Cards may be upside down or rotated. Each code is exactly 11 characters, using only digits 0-9 and uppercase letters A-Z.
 Zero is printed with a slash through it: output it as 0. Read each code carefully, one character at a time.
 If a character is unreadable, put ? in its place.
-Reply with JSON only, no other text: {"codes":["..."]}`;
+Report every code you find with the report_codes tool. If there is no readable code, call it with an empty list.`;
+
+  // Forcing this tool means Claude always answers with {"codes": [...]}, never empty free text.
+  const TOOL = {
+    name: 'report_codes',
+    description: 'Report all card codes read from the photo.',
+    input_schema: {
+      type: 'object',
+      properties: { codes: { type: 'array', items: { type: 'string' }, description: '11-character codes, ? for unreadable characters' } },
+      required: ['codes'],
+    },
+  };
 
   function extractCodes(text) {
     let found = [];
@@ -238,30 +274,33 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
     return [...new Set(clean)];
   }
 
-  async function readImage(image) {
+  // One call to Claude. Returns { codes, empty, stop }.
+  async function callClaude(image) {
     const key = getKey();
     if (!key) { showSettings(true); throw new Error('Unesi svoj Anthropic API ključ (⚙️).'); }
     let r;
     try {
       r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: getModel(),
-        max_tokens: 600,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } },
-            { type: 'text', text: PROMPT },
-          ],
-        }],
-      }),
+        method: 'POST',
+        headers: {
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: getModel(),
+          max_tokens: 600,
+          tools: [TOOL],
+          tool_choice: { type: 'tool', name: TOOL.name },
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } },
+              { type: 'text', text: PROMPT },
+            ],
+          }],
+        }),
       });
     } catch { throw new Error('nema veze sa Anthropic serverom. Proveri internet.'); }
     const data = await r.json().catch(() => ({}));
@@ -274,10 +313,50 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
       if (r.status === 404) throw new Error('izabrani model nije dostupan, promeni ga u ⚙️.');
       throw new Error('Anthropic je vratio grešku ' + r.status + '.');
     }
-    const text = (data.content || []).map(c => c.text || '').join('');
-    const codes = extractCodes(text);
-    console.log('[kod-skener] model:', getModel(), '| odgovor:', text, '| kodovi:', codes);
-    return codes;
+    const blocks = data.content || [];
+    const tool = blocks.find(b => b.type === 'tool_use' && b.name === TOOL.name);
+    const text = blocks.map(b => b.text || '').join('');
+    let codes = [];
+    if (tool && Array.isArray(tool.input?.codes)) codes = extractCodes(JSON.stringify({ codes: tool.input.codes }));
+    else if (text) codes = extractCodes(text);
+    const empty = !tool && !text.trim();
+    console.log('[kod-skener] model:', getModel(), '| stop_reason:', data.stop_reason, '| alat:', tool?.input, '| tekst:', text, '| kodovi:', codes);
+    return { codes, empty, stop: data.stop_reason };
+  }
+
+  // Rotate a base64 JPEG by 180°, for cards photographed upside down.
+  function rotate180(b64) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const g = c.getContext('2d');
+        g.translate(c.width, c.height);
+        g.rotate(Math.PI);
+        g.drawImage(img, 0, 0);
+        resolve(c.toDataURL('image/jpeg', 0.92).split(',')[1]);
+      };
+      img.onerror = reject;
+      img.src = 'data:image/jpeg;base64,' + b64;
+    });
+  }
+
+  // Full read: retry once on an empty reply, then try the image upside down if nothing was found.
+  async function readImage(image) {
+    let res = await callClaude(image);
+    if (res.empty) {
+      log('Prazan odgovor, pokušavam ponovo…');
+      res = await callClaude(image);
+    }
+    if (res.empty) throw new Error(`Claude nije vratio odgovor (${res.stop || 'nepoznat razlog'}). Probaj ponovo.`);
+    if (!res.codes.length) {
+      log('Nema koda, probam okrenutu sliku…');
+      const flipped = await callClaude(await rotate180(image));
+      if (flipped.codes.length) res = flipped;
+    }
+    return res.codes;
   }
 
   const clearSent = () => list.querySelectorAll('.row').forEach(r => {
@@ -381,6 +460,12 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
       fileInput.click();
     }
     if (a === 'reload') location.reload();
+    if (a === 'tab') {
+      const t = e.target.closest('button').dataset.tab;
+      box.querySelectorAll('.ptab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+      box.querySelectorAll('.pane').forEach(p => { p.hidden = p.dataset.pane !== t; });
+      if (t === 'txt') { camOff(); $('textarea').focus(); }
+    }
     if (a === 'clear') { list.innerHTML = ''; log(''); }
     if (a === 'add') { $('textarea').value.split(/[\s,;]+/).forEach(addCode); $('textarea').value = ''; }
     if (a === 'send') sendAll(e.target);
