@@ -364,7 +364,7 @@ Report every code you find with the report_codes tool. If there is no readable c
   }
 
   const clearSent = () => list.querySelectorAll('.row').forEach(r => {
-    if (r.querySelector('.st').textContent === '✅') { console.log('[kod-skener] uklanjam poslat:', r.querySelector('input').value); r.remove(); }
+    if (['✅', '🔁'].includes(r.querySelector('.st').textContent)) { console.log('[kod-skener] uklanjam poslat:', r.querySelector('input').value); r.remove(); }
   });
 
   fileInput.onchange = async () => {
@@ -403,8 +403,15 @@ Report every code you find with the report_codes tool. If there is no readable c
       headers: { Accept: 'text/javascript', 'X-Requested-With': 'XMLHttpRequest' },
     })).text();
     const pic = (js.match(/src=\\?"([^"\\]+)/) || [])[1] || '';
-    return { ok: js.includes('success-message'), pic };
+    // The site's own text, e.g. "Kod nije ispravno upisan!" or "Kod je već upisan u korisnički nalog."
+    const msg = ((js.match(/(?:error|success)-message\\?">([^<]*)</) || [])[1] || '').trim();
+    if (js.includes('success-message')) return { status: 'ok', msg, pic };
+    if (/već upisan/i.test(msg)) return { status: 'already', msg };
+    return { status: 'bad', msg };
   }
+
+  // Final row states: ✅ entered now, 🔁 already on the account, ❌ rejected by the site.
+  const DONE = ['✅', '🔁', '❌'];
 
   // Pošalji sve: only when there is a valid code not yet sent. Očisti sve: only when the list has codes.
   let sending = false;
@@ -412,7 +419,7 @@ Report every code you find with the report_codes tool. If there is no readable c
     const rows = [...list.querySelectorAll('.row')];
     const pending = rows.some(r => {
       const t = r.querySelector('.st').textContent;
-      return t !== '✅' && t !== '❌' && valid(norm(r.querySelector('input').value));
+      return !DONE.includes(t) && valid(norm(r.querySelector('input').value));
     });
     $('[data-a="send"]').disabled = sending || !pending;
     $('[data-a="clear"]').disabled = sending || !rows.length;
@@ -424,30 +431,35 @@ Report every code you find with the report_codes tool. If there is no readable c
     const rows = [...list.querySelectorAll('.row')];
     sending = true;
     updateButtons();
-    let ok = 0, bad = 0;
+    let ok = 0, already = 0, bad = 0;
     for (const row of rows) {
       const inp = row.querySelector('input');
       const st = row.querySelector('.st');
       const code = norm(inp.value);
-      if (st.textContent === '✅' || st.textContent === '❌') continue;   // ↺ is still sent
+      if (DONE.includes(st.textContent)) continue;   // ↺ is still sent
       if (!valid(code)) { st.textContent = '⚠️'; continue; }
       st.textContent = '⏳';
       try {
         const res = await submitOne(code);
-        st.textContent = res.ok ? '✅' : '❌';
-        if (res.ok) {
+        st.textContent = { ok: '✅', already: '🔁', bad: '❌' }[res.status];
+        st.title = res.msg;
+        if (res.status === 'ok') {
           ok++;
           entered.add(prefix(code));
           if (res.pic) { const img = document.createElement('img'); img.src = res.pic; row.insertBefore(img, row.lastChild); }
+        } else if (res.status === 'already') {
+          already++;
+          entered.add(prefix(code));
         } else bad++;
       } catch { st.textContent = '⚠️'; }
       await new Promise(r => setTimeout(r, 800));
     }
     sending = false;
     updateButtons();
-    log(bad
-      ? `Upisano: ${ok}, odbijeno: ${bad}. Kod sa ❌ sajt ne prihvata: proveri slova, ispravi i pošalji ponovo.`
-      : `Upisano: ${ok}. Svi kodovi su prihvaćeni.`);
+    const parts = [`Upisano: ${ok}`];
+    if (already) parts.push(`već upisano ranije: ${already}`);
+    if (bad) parts.push(`odbijeno: ${bad}`);
+    log(parts.join(', ') + '.' + (bad ? ' Kod sa ❌ sajt ne prihvata: proveri slova, ispravi i pošalji ponovo.' : ''));
   }
 
   box.addEventListener('click', e => {
