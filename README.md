@@ -16,7 +16,8 @@ Nema servera. Sve radi u tvom browseru, sa **tvojim** Anthropic API ključem.
 
 ## Objavljivanje
 
-- GitHub Pages služi folder `/docs` sa grane `main` (Settings → Pages).
+- Svaki push na `main` pokreće `.github/workflows/pages.yml`: upisuje verziju u `docs/scanner.js` i objavljuje folder `/docs` na GitHub Pages (Settings → Pages → Source: *GitHub Actions*).
+- Verzija je u obliku `GG.NN.D.SSMM`: godina, ISO nedelja, dan u nedelji (1 = ponedeljak … 7 = nedelja) i vreme po Beogradu. Lokalno, bez deploya, piše `dev`.
 - `docs/CNAME` ga usmerava na `skener.tsopany.com`.
 - U Cloudflare DNS-u postoji `CNAME` zapis od `skener` ka `tsopany.github.io`.
 

@@ -1,10 +1,13 @@
 // Kod skener: runs on digitalni-album.igraoni.ca, loaded by the bookmarklet.
 // Reads card codes with Claude using the user's OWN Anthropic API key (stored in localStorage only).
 (() => {
+  const VERSION = 'dev';   // replaced on deploy by .github/workflows/pages.yml with YY.WW.D.HHMM (year, ISO week, ISO weekday, time)
   const ID = 'kod-skener';
 
+  // Clicking the bookmarklet again toggles the panel, unless a newer version was loaded: then replace it.
   const old = document.getElementById(ID);
-  if (old) { old.style.display = old.style.display === 'none' ? '' : 'none'; return; }
+  if (old && old.dataset.version === VERSION) { old.style.display = old.style.display === 'none' ? '' : 'none'; return; }
+  if (old) old.remove();
 
   // Works on any page of the album site: uses the page's code form if present,
   // otherwise posts to /codes with the CSRF token from the page's <meta name="csrf-token">.
@@ -44,6 +47,7 @@
       background:linear-gradient(180deg,#1c2330 0%,#11161e 100%);color:#e7ecf2;border:1px solid rgba(231,236,242,.08);border-radius:14px;
       box-shadow:0 24px 60px rgba(0,0,0,.5),0 8px 20px rgba(0,0,0,.3);font:14px/1.5 Inter,system-ui,sans-serif;padding:14px;letter-spacing:-.005em}
     #${ID} *{box-sizing:border-box}
+    #${ID} .ver{font:400 11px Inter,system-ui,sans-serif;color:#5a6577;letter-spacing:0;margin-left:4px}
     @media (max-width:600px){
       #${ID}{left:0;right:0;bottom:0;width:auto;border-radius:14px 14px 0 0;max-height:calc(100vh - 12px);max-height:calc(100dvh - 12px)}
     }
@@ -87,8 +91,9 @@
 
   const box = document.createElement('div');
   box.id = ID;
+  box.dataset.version = VERSION;
   box.innerHTML = `
-    <h3>📷 Kod skener <span><button class="sec" data-a="reload" title="Osveži album">↻</button> <button class="sec" data-a="settings" title="Podešavanja">⚙️</button> <button class="sec" data-a="close">✕</button></span></h3>
+    <h3><span>📷 Kod skener <small class="ver">v${VERSION}</small></span><span><button class="sec" data-a="reload" title="Osveži album">↻</button> <button class="sec" data-a="settings" title="Podešavanja">⚙️</button> <button class="sec" data-a="close">✕</button></span></h3>
     <div class="settings" hidden>
       <div class="msg">Tvoj Anthropic API ključ (console.anthropic.com). Čuva se samo u ovom browseru.</div>
       <input type="password" class="key" placeholder="sk-ant-..." autocomplete="off">
@@ -467,4 +472,5 @@ Report every code you find with the report_codes tool. If there is no readable c
   });
   if (!getKey()) { showSettings(true); log('Prvi put: unesi svoj Anthropic API ključ.'); }
   loadLog();
+  console.log('[kod-skener] v' + VERSION);
 })();
