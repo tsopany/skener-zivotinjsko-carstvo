@@ -81,16 +81,16 @@
       <div class="bar"><button data-a="savekey">Sačuvaj</button><button class="sec" data-a="forgetkey">Obriši ključ</button></div>
     </div>
     <div class="bar">
-      <button data-a="photo">📷 Slikaj kartice</button>
+      <button data-a="photo">📁 Učitaj sliku</button>
       <button data-a="cam">🎥 Kamera</button>
       <button class="sec" data-a="reload">↻ Osveži album</button>
     </div>
-    <input type="file" accept="image/*" capture="environment" multiple hidden>
+    <input type="file" accept="image/*" multiple hidden>
     <div class="cam" hidden>
       <video playsinline muted></video>
       <div class="bar"><button data-a="snap">📸 Snimi</button><button class="sec" data-a="camoff">Zatvori kameru</button></div>
     </div>
-    <div class="msg">Slikaj 1–4 kartice izbliza, kod oštar i čitljiv.</div>
+    <div class="msg">Učitaj sliku ili uključi kameru. 1–4 kartice po slici, izbliza i oštro.</div>
     <div class="list"></div>
     <textarea placeholder="…ili nalepi kodove ovde (jedan po redu)"></textarea>
     <div class="bar">
