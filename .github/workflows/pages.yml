@@ -27,7 +27,9 @@ jobs:
         run: |
           VERSION=$(TZ=Europe/Belgrade date +'%y.%V.%u.%H%M')
           sed -i "s/const VERSION = 'dev';/const VERSION = '${VERSION}';/" docs/scanner.js
+          sed -i "s|<span id=\"ver\">dev</span>|<span id=\"ver\">${VERSION}</span>|" docs/index.html
           grep -q "const VERSION = '${VERSION}';" docs/scanner.js
+          grep -q "<span id=\"ver\">${VERSION}</span>" docs/index.html
           echo "Version: ${VERSION}" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/configure-pages@v5
