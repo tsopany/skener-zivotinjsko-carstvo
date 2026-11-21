@@ -406,9 +406,24 @@ Report every code you find with the report_codes tool. If there is no readable c
     return { ok: js.includes('success-message'), pic };
   }
 
-  async function sendAll(btn) {
+  // Pošalji sve: only when there is a valid code not yet sent. Očisti sve: only when the list has codes.
+  let sending = false;
+  function updateButtons() {
     const rows = [...list.querySelectorAll('.row')];
-    btn.disabled = true;
+    const pending = rows.some(r => {
+      const t = r.querySelector('.st').textContent;
+      return t !== '✅' && t !== '❌' && valid(norm(r.querySelector('input').value));
+    });
+    $('[data-a="send"]').disabled = sending || !pending;
+    $('[data-a="clear"]').disabled = sending || !rows.length;
+  }
+  new MutationObserver(updateButtons).observe(list, { childList: true, subtree: true, characterData: true });
+  list.addEventListener('input', updateButtons);
+
+  async function sendAll() {
+    const rows = [...list.querySelectorAll('.row')];
+    sending = true;
+    updateButtons();
     let ok = 0, bad = 0;
     for (const row of rows) {
       const inp = row.querySelector('input');
@@ -428,7 +443,8 @@ Report every code you find with the report_codes tool. If there is no readable c
       } catch { st.textContent = '⚠️'; }
       await new Promise(r => setTimeout(r, 800));
     }
-    btn.disabled = false;
+    sending = false;
+    updateButtons();
     log(bad
       ? `Upisano: ${ok}, odbijeno: ${bad}. Kod sa ❌ sajt ne prihvata: proveri slova, ispravi i pošalji ponovo.`
       : `Upisano: ${ok}. Svi kodovi su prihvaćeni.`);
@@ -468,9 +484,10 @@ Report every code you find with the report_codes tool. If there is no readable c
     }
     if (a === 'clear') { list.innerHTML = ''; log(''); }
     if (a === 'add') { $('textarea').value.split(/[\s,;]+/).forEach(addCode); $('textarea').value = ''; }
-    if (a === 'send') sendAll(e.target);
+    if (a === 'send') sendAll();
   });
   if (!getKey()) { showSettings(true); log('Prvi put: unesi svoj Anthropic API ključ.'); }
+  updateButtons();
   loadLog();
   console.log('[kod-skener] v' + VERSION);
 })();
