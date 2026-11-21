@@ -64,7 +64,7 @@
     #${ID} .row input.bad{border-color:#ff6b6b;background:rgba(255,107,107,.08)}
     #${ID} .st{width:26px;text-align:center}
     #${ID} .row img{height:32px;border-radius:4px}
-    #${ID} textarea{width:100%;font:13px ui-monospace,SFMono-Regular,Menlo,monospace;min-height:48px;padding:8px;resize:vertical}
+    #${ID} textarea{width:100%;font:13px ui-monospace,SFMono-Regular,Menlo,monospace;min-height:144px;padding:8px;resize:vertical}
     #${ID} .msg{font-size:12.5px;color:#8a95a6;margin:6px 0}
     #${ID} .log{color:#7cf5d4}
     #${ID} .bar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
