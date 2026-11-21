@@ -6,8 +6,17 @@
   const old = document.getElementById(ID);
   if (old) { old.style.display = old.style.display === 'none' ? '' : 'none'; return; }
 
-  const form = document.querySelector('form[action*="code"]');
-  if (!form) { alert('Kod skener: nema forme za kod. Otvori /pictures dok si ulogovan.'); return; }
+  // Works on any page of the album site: uses the page's code form if present,
+  // otherwise posts to /codes with the CSRF token from the page's <meta name="csrf-token">.
+  if (location.hostname !== 'digitalni-album.igraoni.ca') {
+    alert('Kod skener radi samo na digitalni-album.igraoni.ca.');
+    return;
+  }
+  const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
+  if (!document.querySelector('form[action*="code"]') && !csrf()) {
+    alert('Kod skener: uloguj se na digitalni album pa probaj ponovo.');
+    return;
+  }
 
   // ---------- remembered submissions (best-effort) ----------
   const DONE_KEY = 'kodSkenerDone';
@@ -246,9 +255,20 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
 
   // ---------- submit ----------
   async function submitOne(code) {
-    const fd = new FormData(form);
+    const form = document.querySelector('form[action*="code"]');
+    let fd, action;
+    if (form) {
+      fd = new FormData(form);
+      action = form.action;
+    } else {
+      fd = new FormData();
+      fd.set('utf8', '✓');
+      fd.set('authenticity_token', csrf());
+      fd.set('commit', 'Pošalji');
+      action = '/codes';
+    }
     fd.set('code', code);
-    const js = await (await fetch(form.action, {
+    const js = await (await fetch(action, {
       method: 'POST', body: fd, credentials: 'same-origin',
       headers: { Accept: 'text/javascript', 'X-Requested-With': 'XMLHttpRequest' },
     })).text();
