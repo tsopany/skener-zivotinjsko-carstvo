@@ -249,7 +249,7 @@ Zero is printed with a slash through it: output it as 0. Read each code carefull
 If a character is unreadable, put ? in its place.
 Report every code you find with the report_codes tool. If there is no readable code, call it with an empty list.`;
 
-  // Forcing this tool means Claude always answers with {"codes": [...]}, never empty free text.
+  // Claude is asked to answer through this tool, so the answer is {"codes": [...]}; free text is parsed as a fallback.
   const TOOL = {
     name: 'report_codes',
     description: 'Report all card codes read from the photo.',
@@ -288,7 +288,9 @@ Report every code you find with the report_codes tool. If there is no readable c
           model: getModel(),
           max_tokens: 600,
           tools: [TOOL],
-          tool_choice: { type: 'tool', name: TOOL.name },
+          // Forced tool choice ("tool"/"any") is rejected by current models, so the prompt asks for the tool
+          // and a plain-text answer is still parsed as a fallback.
+          tool_choice: { type: 'auto' },
           messages: [{
             role: 'user',
             content: [
@@ -302,12 +304,13 @@ Report every code you find with the report_codes tool. If there is no readable c
     const data = await r.json().catch(() => ({}));
     if (r.status === 401) { showSettings(true); throw new Error('API ključ nije ispravan.'); }
     if (!r.ok) {
+      console.warn('[kod-skener] Anthropic', r.status, data.error?.type, data.error?.message);
       const m = (data.error?.message || '').toLowerCase();
       if (m.includes('credit')) throw new Error('nema dovoljno kredita na Anthropic nalogu.');
       if (r.status === 429) throw new Error('previše zahteva, sačekaj malo pa probaj ponovo.');
       if (r.status === 529 || r.status >= 500) throw new Error('Anthropic je trenutno preopterećen, probaj ponovo.');
       if (r.status === 404) throw new Error('izabrani model nije dostupan, promeni ga u ⚙️.');
-      throw new Error('Anthropic je vratio grešku ' + r.status + '.');
+      throw new Error('Anthropic je vratio grešku ' + r.status + (data.error?.message ? ': ' + data.error.message : '.'));
     }
     const blocks = data.content || [];
     const tool = blocks.find(b => b.type === 'tool_use' && b.name === TOOL.name);
