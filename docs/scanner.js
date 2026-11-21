@@ -100,6 +100,7 @@
       <select class="model">
         <option value="claude-haiku-5-5">Haiku (jeftinije)</option>
         <option value="claude-sonnet-5-5">Sonnet (preciznije)</option>
+        <option value="claude-opus-5-5">Opus (najpreciznije, najskuplje)</option>
       </select>
       <div class="bar"><button data-a="savekey">Sačuvaj</button><button class="sec" data-a="forgetkey">Obriši ključ</button></div>
     </div>
@@ -252,6 +253,15 @@
 Cards may be upside down or rotated. Each code is exactly 11 characters, using only digits 0-9 and uppercase letters A-Z.
 Zero is printed with a slash through it: output it as 0. Read each code carefully, one character at a time.
 If a character is unreadable, put ? in its place.
+
+The font is a 5x7 dot matrix. Tell these look-alike characters apart by the dots:
+- U vs V: U keeps two separate vertical sides down to a flat bottom row of dots; V's sides lean inward and meet in a single dot at the bottom.
+- 0 vs O: zero has a slash through it; the letter O has none.
+- 8 vs B: B has a straight vertical left side; 8 is rounded on both sides.
+- 1 vs I: 1 has a small flag at the top-left and usually a base; I is a plain vertical line with serifs top and bottom.
+- 5 vs S and 2 vs Z: 5 and 2 have a straight horizontal top row; S is rounded at the top; Z has a straight diagonal.
+- D vs 0: D has a straight vertical left side.
+Look at the bottom rows of U, V and W carefully before deciding.
 Report every code you find with the report_codes tool. If there is no readable code, call it with an empty list.`;
 
   // Claude is asked to answer through this tool, so the answer is {"codes": [...]}; free text is parsed as a fallback.

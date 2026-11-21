@@ -27,7 +27,7 @@ GPL-3.0, vidi `LICENSE`.
 
 ## Napomene
 
-- Podrazumevani model je Haiku. Ako pogrešno čita kodove, prebaci na Sonnet u ⚙️.
+- Podrazumevani model je Haiku. Ako pogrešno čita kodove, prebaci na Sonnet ili Opus u ⚙️ (precizniji, ali skuplji).
 - Korisnici bi trebalo da postave mesečni limit potrošnje za svoj ključ u Anthropic konzoli.
 - Ključ stoji u `localStorage` sajta albuma, pa bi ga svaka skripta na tom sajtu mogla pročitati. Ključ sa niskim limitom potrošnje drži taj rizik malim.
 - Nezvaničan alat, nije povezan sa Krašom. Upisuje samo kodove sa kartica koje korisnik slika.
