@@ -219,7 +219,9 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
   async function readImage(image) {
     const key = getKey();
     if (!key) { showSettings(true); throw new Error('Unesi svoj Anthropic API ključ (⚙️).'); }
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'x-api-key': key,
@@ -238,10 +240,18 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
           ],
         }],
       }),
-    });
+      });
+    } catch { throw new Error('nema veze sa Anthropic serverom. Proveri internet.'); }
     const data = await r.json().catch(() => ({}));
     if (r.status === 401) { showSettings(true); throw new Error('API ključ nije ispravan.'); }
-    if (!r.ok) throw new Error(data.error?.message || 'HTTP ' + r.status);
+    if (!r.ok) {
+      const m = (data.error?.message || '').toLowerCase();
+      if (m.includes('credit')) throw new Error('nema dovoljno kredita na Anthropic nalogu.');
+      if (r.status === 429) throw new Error('previše zahteva, sačekaj malo pa probaj ponovo.');
+      if (r.status === 529 || r.status >= 500) throw new Error('Anthropic je trenutno preopterećen, probaj ponovo.');
+      if (r.status === 404) throw new Error('izabrani model nije dostupan, promeni ga u ⚙️.');
+      throw new Error('Anthropic je vratio grešku ' + r.status + '.');
+    }
     return extractCodes((data.content || []).map(c => c.text || '').join(''));
   }
 

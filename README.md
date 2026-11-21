@@ -1,31 +1,31 @@
 # Kod skener
 
-A bookmarklet for the [Životinjsko carstvo digital album](https://digitalni-album.igraoni.ca). You photograph your cards, Claude reads the dot-matrix codes, and they're submitted to your album.
+Bookmarklet za [digitalni album Životinjsko carstvo](https://digitalni-album.igraoni.ca). Slikaš kartice, Claude pročita kodove odštampane tačkastim slovima, a oni se upišu u tvoj album.
 
-There's no server. Everything runs in your browser, using **your own** Anthropic API key.
+Nema servera. Sve radi u tvom browseru, sa **tvojim** Anthropic API ključem.
 
-**Setup page:** https://skener.tsopany.com
+**Stranica za podešavanje:** https://skener.tsopany.com
 
-## How it works
+## Kako radi
 
-- The bookmarklet loads `docs/scanner.js` (served by GitHub Pages) into the album page.
-- **Photos → codes.** The photo is resized in the browser and sent straight to the Anthropic API with the user's key. Claude returns every 11-character code it finds.
-- **Submitting.** Codes go through the site's own form (session cookie + CSRF token, `Accept: text/javascript`), one every 0.8 s, exactly like typing them by hand. `success-message` in the reply means accepted, `error-message` means rejected.
-- **Storage.** The API key, model choice and accepted codes are stored in `localStorage` on the album site's origin. Nothing is sent anywhere except the album site and `api.anthropic.com`.
+- Bookmarklet učitava `docs/scanner.js` (sa GitHub Pages) u bilo koju stranicu albuma.
+- **Slika → kodovi.** Slika se smanji u browseru i šalje direktno Anthropic API-ju sa ključem korisnika. Claude vraća sve kodove od 11 znakova koje nađe.
+- **Upisivanje.** Kodovi idu preko forme samog sajta (sesijski kolačić + CSRF token, `Accept: text/javascript`), jedan na svakih 0,8 s, isto kao kad ih ručno upišeš. Ako na stranici nema forme, šalju se na `/codes` sa tokenom iz `<meta name="csrf-token">`. `success-message` u odgovoru znači da je kod prihvaćen, `error-message` da nije.
+- **Čuvanje.** API ključ, izabrani model i prihvaćeni kodovi čuvaju se u `localStorage` sajta albuma. Ništa se ne šalje nikome osim sajtu albuma i `api.anthropic.com`.
 
-## Publishing
+## Objavljivanje
 
-- GitHub Pages serves the `/docs` folder of `main` (Settings → Pages).
-- `docs/CNAME` points it to `skener.tsopany.com`.
-- In Cloudflare DNS there's a `CNAME` record from `skener` to `<github-user>.github.io`.
+- GitHub Pages služi folder `/docs` sa grane `main` (Settings → Pages).
+- `docs/CNAME` ga usmerava na `skener.tsopany.com`.
+- U Cloudflare DNS-u postoji `CNAME` zapis od `skener` ka `tsopany.github.io`.
 
-## License
+## Licenca
 
-GPL-3.0, see `LICENSE`.
+GPL-3.0, vidi `LICENSE`.
 
-## Notes
+## Napomene
 
-- Haiku is the default model. If it misreads codes, switch to Sonnet in ⚙️.
-- Users should set a monthly spend limit on their API key in the Anthropic Console.
-- The key sits in the album site's `localStorage`, so any script running on that site could read it. A key with a low spend limit keeps that risk small.
-- Unofficial and not affiliated with Kraš. It only submits codes from cards the user photographs.
+- Podrazumevani model je Haiku. Ako pogrešno čita kodove, prebaci na Sonnet u ⚙️.
+- Korisnici bi trebalo da postave mesečni limit potrošnje za svoj ključ u Anthropic konzoli.
+- Ključ stoji u `localStorage` sajta albuma, pa bi ga svaka skripta na tom sajtu mogla pročitati. Ključ sa niskim limitom potrošnje drži taj rizik malim.
+- Nezvaničan alat, nije povezan sa Krašom. Upisuje samo kodove sa kartica koje korisnik slika.
