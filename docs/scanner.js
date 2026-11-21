@@ -339,7 +339,9 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
       await new Promise(r => setTimeout(r, 800));
     }
     btn.disabled = false;
-    log(`Gotovo: ✅ ${ok}  ❌ ${bad}. ❌ = sajt kaže "Kod nije ispravno upisan" — proveri slova i pošalji ponovo.`);
+    log(bad
+      ? `Upisano: ${ok}, odbijeno: ${bad}. Kod sa ❌ sajt ne prihvata: proveri slova, ispravi i pošalji ponovo.`
+      : `Upisano: ${ok}. Svi kodovi su prihvaćeni.`);
   }
 
   box.addEventListener('click', e => {
