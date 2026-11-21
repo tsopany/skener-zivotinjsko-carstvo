@@ -11,7 +11,8 @@ Nema servera. Sve radi u tvom browseru, sa **tvojim** Anthropic API ključem.
 - Bookmarklet učitava `docs/scanner.js` (sa GitHub Pages) u bilo koju stranicu albuma.
 - **Slika → kodovi.** Slika se smanji u browseru i šalje direktno Anthropic API-ju sa ključem korisnika. Claude vraća sve kodove od 11 znakova koje nađe.
 - **Upisivanje.** Kodovi idu preko forme samog sajta (sesijski kolačić + CSRF token, `Accept: text/javascript`), jedan na svakih 0,8 s, isto kao kad ih ručno upišeš. Ako na stranici nema forme, šalju se na `/codes` sa tokenom iz `<meta name="csrf-token">`. `success-message` u odgovoru znači da je kod prihvaćen, `error-message` da nije.
-- **Čuvanje.** API ključ, izabrani model i prihvaćeni kodovi čuvaju se u `localStorage` sajta albuma. Ništa se ne šalje nikome osim sajtu albuma i `api.anthropic.com`.
+- **Već upisani kodovi.** Panel pročita `/log` sajta, gde se vidi prvih 8 znakova svakog upisanog koda. Kod koji počinje isto označava se sa ↺ kao verovatno već upisan, ali se ipak šalje, jer više kodova može imati isti početak.
+- **Čuvanje.** API ključ i izabrani model čuvaju se u `localStorage` sajta albuma. Ništa se ne šalje nikome osim sajtu albuma i `api.anthropic.com`.
 
 ## Objavljivanje
 

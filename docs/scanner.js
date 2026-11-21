@@ -19,10 +19,18 @@
   }
 
   // ---------- remembered submissions (best-effort) ----------
-  const DONE_KEY = 'kodSkenerDone';
-  const loadDone = () => { try { return JSON.parse(localStorage.getItem(DONE_KEY) || '{}'); } catch { return {}; } };
-  const saveDone = d => { try { localStorage.setItem(DONE_KEY, JSON.stringify(d)); } catch {} };
-  const done = loadDone();
+  // Already-entered codes come from the site's own log (/log), which shows only the first
+  // 8 characters (e.g. "067-E9PJ-P***"). Codes with the same 8-char start exist, so a match
+  // is only a warning (↺), never a reason to skip sending.
+  const entered = new Set();
+  const prefix = c => c.slice(0, 8);
+  async function loadLog() {
+    try {
+      const html = await (await fetch('/log', { credentials: 'same-origin' })).text();
+      for (const m of html.matchAll(/Unos koda\s+([0-9A-Z]{3})-([0-9A-Z]{4})-([0-9A-Z])\*{3}/g)) entered.add(m[1] + m[2] + m[3]);
+      list.querySelectorAll('.row').forEach(r => r.check?.());
+    } catch {}
+  }
 
   // ---------- settings: user's own API key + model, kept only in this browser ----------
   const KEY_KEY = 'kodSkenerApiKey';
@@ -98,6 +106,7 @@
     <textarea placeholder="…ili nalepi kodove ovde (jedan po redu)"></textarea>
     <div class="bar">
       <button class="sec" data-a="add">+ Dodaj iz teksta</button>
+      <button class="sec" data-a="clear">🧹 Očisti sve</button>
       <button data-a="send">Pošalji sve</button>
     </div>
     <div class="msg log"></div>`;
@@ -128,13 +137,18 @@
     const st = row.querySelector('.st');
     inp.value = code;
     const check = () => {
-      inp.classList.toggle('bad', !valid(norm(inp.value)));
-      if (done[norm(inp.value)]) st.textContent = '✔︎';
+      const c = norm(inp.value);
+      inp.classList.toggle('bad', !valid(c));
+      if (st.textContent === '' || st.textContent === '↺') {
+        const seen = valid(c) && entered.has(prefix(c));
+        st.textContent = seen ? '↺' : '';
+        st.title = seen ? 'Verovatno već upisan (prema logu sajta)' : '';
+      }
     };
+    row.check = check;
     inp.addEventListener('input', () => { st.textContent = ''; check(); });
     row.querySelector('button').onclick = () => row.remove();
     check();
-    if (done[code]) st.title = 'Već poslat ranije';
     list.appendChild(row);
   }
 
@@ -191,6 +205,7 @@
     log('Čitam…');
     try {
       const codes = await readImage(c.toDataURL('image/jpeg', 0.92).split(',')[1]);
+      clearSent();
       codes.forEach(addCode);
       log(codes.length ? `Pročitano: ${codes.join(', ')}` : 'Nijedan kod. Približi karticu ili pojačaj svetlo.');
     } catch (e) { log('Greška: ' + e.message); }
@@ -255,9 +270,12 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
     return extractCodes((data.content || []).map(c => c.text || '').join(''));
   }
 
+  const clearSent = () => list.querySelectorAll('.row').forEach(r => { if (r.querySelector('.st').textContent === '✅') r.remove(); });
+
   fileInput.onchange = async () => {
     const files = [...fileInput.files];
     fileInput.value = '';
+    clearSent();
     let found = 0;
     for (const [i, f] of files.entries()) {
       log(`Čitam sliku ${i + 1}/${files.length}…`);
@@ -301,7 +319,7 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
       const inp = row.querySelector('input');
       const st = row.querySelector('.st');
       const code = norm(inp.value);
-      if (st.textContent === '✅' || st.textContent === '❌') continue;
+      if (st.textContent === '✅' || st.textContent === '❌') continue;   // ↺ is still sent
       if (!valid(code)) { st.textContent = '⚠️'; continue; }
       st.textContent = '⏳';
       try {
@@ -309,8 +327,7 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
         st.textContent = res.ok ? '✅' : '❌';
         if (res.ok) {
           ok++;
-          done[code] = Date.now();
-          saveDone(done);
+          entered.add(prefix(code));
           if (res.pic) { const img = document.createElement('img'); img.src = res.pic; row.insertBefore(img, row.lastChild); }
         } else bad++;
       } catch { st.textContent = '⚠️'; }
@@ -346,8 +363,10 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
       fileInput.click();
     }
     if (a === 'reload') location.reload();
+    if (a === 'clear') { list.innerHTML = ''; log(''); }
     if (a === 'add') { $('textarea').value.split(/[\s,;]+/).forEach(addCode); $('textarea').value = ''; }
     if (a === 'send') sendAll(e.target);
   });
   if (!getKey()) { showSettings(true); log('Prvi put: unesi svoj Anthropic API ključ.'); }
+  loadLog();
 })();
