@@ -71,9 +71,15 @@
   footer .wrap{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:16px 24px}
   footer p{margin:0;font-size:12px;color:var(--muted)}
   footer .tag{font-family:var(--font-display);font-style:italic}
+  .tabs{display:inline-flex;gap:4px;padding:4px;background:var(--surface);border:1px solid rgba(231,236,242,.08);border-radius:999px;justify-self:start}
+  .tab{font:500 .86rem var(--font-body);color:var(--muted);background:transparent;border:0;border-radius:999px;padding:.5rem 1rem;cursor:pointer;transition:color .2s,background .2s}
+  .tab:hover{color:var(--text)}
+  .tab[aria-selected="true"]{background:var(--accent);color:var(--bg);font-weight:600}
+  .hint{font-size:.85rem;color:var(--muted)}
+  body[data-dev="desktop"] .only-mobile,body[data-dev="mobile"] .only-desktop{display:none}
 </style>
 </head>
-<body>
+<body data-dev="desktop">
 
 <header>
   <div class="wrap">
@@ -102,28 +108,39 @@
       <p>Jedna slika košta delić centa. Ključ se čuva samo u tvom browseru i šalje se samo Anthropic-u.</p>
     </article>
 
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-dev="desktop">💻 Računar</button>
+      <button class="tab" role="tab" data-dev="mobile">📱 Telefon (Android)</button>
+    </div>
+
     <article class="card">
       <div class="card-head"><span class="num">02</span><h2>Dodaj dugme u bookmarke</h2></div>
-      <div class="sub-label">Računar</div>
-      <p>Prevuci ovo dugme na traku sa bookmarkima:</p>
-      <p><a class="btn-primary" id="bm" href="#">📷 Kod skener</a></p>
-      <div class="sub-label">Android · Chrome</div>
-      <ol>
-        <li>Kopiraj ovaj tekst: <button class="btn-secondary" id="copy">Kopiraj</button></li>
-      </ol>
-      <textarea id="code" readonly></textarea>
-      <ol start="2">
-        <li>Sačuvaj bilo koju stranicu kao bookmark, pa ga izmeni: ime <code>kodskener</code>, a umesto adrese nalepi kopirani tekst.</li>
-        <li>Na stranici albuma ukucaj <code>kodskener</code> u adresnu traku i dodirni bookmark iz predloga.</li>
-      </ol>
+      <div class="only-desktop">
+        <p>Prevuci ovo dugme na traku sa bookmarkima:</p>
+        <p><a class="btn-primary" id="bm" href="#">📷 Kod skener</a></p>
+        <p class="hint">Ne vidiš traku? <code>Ctrl+Shift+B</code> (Windows) ili <code>Cmd+Shift+B</code> (Mac).</p>
+      </div>
+      <div class="only-mobile">
+        <ol>
+          <li>Kopiraj ovaj tekst: <button class="btn-secondary" id="copy">Kopiraj</button></li>
+        </ol>
+        <textarea id="code" readonly></textarea>
+        <ol start="2">
+          <li>Otvori bilo koju stranicu, pa <b>⋮</b> → <b>☆</b> da je sačuvaš.</li>
+          <li><b>⋮</b> → <b>Obeleživači</b> → <b>⋮</b> pored tog obeleživača → <b>Izmeni</b>.</li>
+          <li>Naziv: <code>kodskener</code>. U URL obriši adresu i nalepi kopirani tekst.</li>
+        </ol>
+      </div>
     </article>
 
     <article class="card">
       <div class="card-head"><span class="num">03</span><h2>Koristi ga</h2></div>
       <ol>
         <li>Uloguj se na <a target="_blank" rel="noopener" href="https://digitalni-album.igraoni.ca/">digitalni-album.igraoni.ca</a> (bilo koja stranica albuma).</li>
-        <li>Klikni bookmark. Prvi put unesi API ključ (⚙️).</li>
-        <li><b>📷 Slikaj kartice</b> (telefon) ili <b>🎥 Kamera</b> → <b>📸 Snimi</b> (laptop).</li>
+        <li class="only-desktop">Klikni bookmark <b>📷 Kod skener</b>. Prvi put unesi API ključ (⚙️).</li>
+        <li class="only-mobile">Ukucaj <code>kodskener</code> u adresnu traku i dodirni bookmark iz predloga. Prvi put unesi API ključ (⚙️).</li>
+        <li class="only-desktop"><b>🎥 Kamera</b>, drži karticu 15–25 cm od kamere, pa <b>📸 Snimi</b>. Može i <b>📷</b> sa gotove slike.</li>
+        <li class="only-mobile"><b>📷 Slikaj kartice</b>: jedna slika može imati 1–4 kartice, izbliza i oštro.</li>
         <li>Proveri kodove (crveno = nečitko), pa <b>Pošalji sve</b>. ✅ = upisan, ❌ = sajt ga ne prihvata.</li>
       </ol>
     </article>
@@ -141,6 +158,14 @@
 
 <script>
   document.getElementById('y').textContent = new Date().getFullYear();
+  // tabs: default to the device the visitor is on
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || matchMedia('(pointer: coarse)').matches;
+  const setDev = dev => {
+    document.body.dataset.dev = dev;
+    document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.dev === dev)));
+  };
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => setDev(t.dataset.dev));
+  setDev(isMobile ? 'mobile' : 'desktop');
   const src = new URL('scanner.js', location.href).href;
   const bm = `javascript:(()=>{const s=document.createElement('script');s.src='${src}?'+Date.now();document.body.appendChild(s)})()`;
   const a = document.getElementById('bm');
