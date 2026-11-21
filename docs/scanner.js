@@ -267,10 +267,15 @@ Reply with JSON only, no other text: {"codes":["..."]}`;
       if (r.status === 404) throw new Error('izabrani model nije dostupan, promeni ga u ⚙️.');
       throw new Error('Anthropic je vratio grešku ' + r.status + '.');
     }
-    return extractCodes((data.content || []).map(c => c.text || '').join(''));
+    const text = (data.content || []).map(c => c.text || '').join('');
+    const codes = extractCodes(text);
+    console.log('[kod-skener] model:', getModel(), '| odgovor:', text, '| kodovi:', codes);
+    return codes;
   }
 
-  const clearSent = () => list.querySelectorAll('.row').forEach(r => { if (r.querySelector('.st').textContent === '✅') r.remove(); });
+  const clearSent = () => list.querySelectorAll('.row').forEach(r => {
+    if (r.querySelector('.st').textContent === '✅') { console.log('[kod-skener] uklanjam poslat:', r.querySelector('input').value); r.remove(); }
+  });
 
   fileInput.onchange = async () => {
     const files = [...fileInput.files];
