@@ -54,6 +54,9 @@
     #${ID} .log{color:#7cf5d4}
     #${ID} .bar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
     #${ID} video{width:100%;border-radius:10px;background:#000;display:block}
+    #${ID} .cam{position:relative}
+    #${ID} .cam.busy::after{content:'Čitam…';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      background:rgba(10,13,18,.45);color:#7cf5d4;font:500 15px Inter,system-ui,sans-serif;border-radius:10px;pointer-events:none}
     #${ID} .settings{background:rgba(10,13,18,.6);border:1px solid rgba(231,236,242,.06);border-radius:10px;padding:10px;margin-bottom:8px}
     #${ID} .settings input,#${ID} .settings select{width:100%;font:inherit;padding:7px 8px;margin:4px 0}`;
   if (!document.getElementById(ID + '-fonts')) {
@@ -183,12 +186,16 @@
     c.height = video.videoHeight;
     c.getContext('2d').drawImage(video, 0, 0);
     btn.disabled = true;
+    video.pause();                       // freeze on the captured frame while it's being read
+    camBox.classList.add('busy');
     log('Čitam…');
     try {
       const codes = await readImage(c.toDataURL('image/jpeg', 0.92).split(',')[1]);
       codes.forEach(addCode);
       log(codes.length ? `Pročitano: ${codes.join(', ')}` : 'Nijedan kod. Približi karticu ili pojačaj svetlo.');
     } catch (e) { log('Greška: ' + e.message); }
+    camBox.classList.remove('busy');
+    if (stream) video.play().catch(() => {});
     btn.disabled = false;
   }
 
